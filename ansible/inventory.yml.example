@@ -1,0 +1,10 @@
+docker:
+  hosts: root@10.16.0.1
+
+dns:
+  hosts: root@10.16.0.2
+
+ubuntu_vms:
+  children:
+    docker:
+    dns:

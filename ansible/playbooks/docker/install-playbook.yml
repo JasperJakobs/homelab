@@ -1,0 +1,22 @@
+---
+- hosts: dns
+  become: yes
+  gather_facts: true
+  vars_files:
+    - ../../vars/sudo.yml
+    - ../../roles/technitium/vars/main.yml
+  vars:
+    ansible_become_pass: "{{ docker_sudo_pass }}"
+  tags:
+    - ubuntu-dns-install
+    - ubuntu-dns
+    - ubuntu
+    - dns-install
+    - dns
+  tasks:
+  - name: Install docker
+    ansible.builtin.import_role:
+      name: "../../roles/docker"
+    tags:
+      - ubuntu-vm-docker-install
+      - ubuntu-docker-install

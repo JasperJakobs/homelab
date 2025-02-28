@@ -1,0 +1,5 @@
+dns_sudo_pass: 'your_password'
+
+docker_sudo_pass: 'your_password'
+
+unifi_sudo_pass: 'your_password'
