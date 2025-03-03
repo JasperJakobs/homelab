@@ -1,0 +1,46 @@
+- name: Startpagina
+  width: slim
+  hide-desktop-navigation: true
+  center-vertically: true
+  columns:
+    - size: full
+      widgets:
+        - type: search
+          title: Zoeken
+          placeholder: Zoeken op Google
+          search-engine: google
+          autofocus: true
+        - type: bookmarks
+          title: Bladwijzers
+          groups:
+            - links:
+                - title: Unifi
+                  url: https://unifi.lcl.jkbs.nl/
+                  icon: si:ubiquiti
+                - title: Nginx Proxy Manager
+                  url: https://npm.lcl.jkbs.nl/
+                  icon: si:nginxproxymanager
+                - title: Proxmox
+                  url: https://prx.lcl.jkbs.nl/
+                  icon: si:proxmox
+            - links:
+                - title: Home Assistant
+                  url: https://ha.lcl.jkbs.nl/
+                  icon: si:homeassistant
+                - title: Portainer
+                  url: https://portainer.lcl.jkbs.nl/
+                  icon: si:portainer
+                - title: Semaphore
+                  url: https://semaphore.lcl.jkbs.nl/
+                  icon: si:ansible
+            - links:
+                - title: Calibre
+                  url: https://calibre.lcl.jkbs.nl/
+                - title: NAS
+                  url: https://nas.lcl.jkbs.nl/
+                  icon: si:googlecloudstorage
+                - title: Grafana
+                  url: https://prx.lcl.jkbs.nl/
+                  icon: si:grafana
+
+        

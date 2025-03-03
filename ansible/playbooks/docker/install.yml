@@ -1,5 +1,5 @@
 ---
-- hosts: dns
+- hosts: docker
   become: yes
   gather_facts: true
   vars_files:

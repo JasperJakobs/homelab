@@ -1,0 +1,2 @@
+install_directory: '~/docker/glance'
+base_address: 'http://localhost:8080'

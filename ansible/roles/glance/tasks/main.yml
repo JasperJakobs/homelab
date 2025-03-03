@@ -1,0 +1,32 @@
+---
+- name: create directory structure for portainer
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0775
+  with_items:
+    - "{{ install_directory }}"
+    - "{{ install_directory }}/config"
+
+- name: create docker-compose file to run container
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ install_directory }}/docker-compose.yml"
+    mode: 0655
+
+- name: copy configuration file
+  template:
+    src: glance.yml.j2
+    dest: "{{ install_directory }}/config/glance.yml"
+    mode: 0655
+
+- name: copy configuration file
+  template:
+    src: home.yml.j2
+    dest: "{{ install_directory }}/config/home.yml"
+    mode: 0655
+
+- name: start container using docker-compose
+  command: docker compose up -d
+  args:
+    chdir: "{{ install_directory }}"
