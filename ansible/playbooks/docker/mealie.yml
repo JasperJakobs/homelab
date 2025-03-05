@@ -4,15 +4,14 @@
   gather_facts: true
   vars_files:
     - ../../vars/sudo.yml
-    - ../../roles/technitium/vars/main.yml
   vars:
     ansible_become_pass: "{{ docker_sudo_pass }}"
   tags:
-    - docker-glance-install
-    - docker-glance
+    - docker-mealie-install
+    - docker-mealie
     - docker
-    - glance-install
-    - glance
+    - mealie-install
+    - mealie
   tasks:
   - name: Check if docker is installed
     ansible.builtin.command: docker --version
@@ -27,9 +26,9 @@
       - ubuntu-vm-docker-install
       - ubuntu-docker-install
 
-  - name: Install glance
+  - name: Install mealie
     ansible.builtin.import_role:
-      name: "../../roles/glance"
+      name: "../../roles/mealie"
     tags:
-      - glance-install
-      - docker-glance-install
+      - mealie-install
+      - docker-mealie-install

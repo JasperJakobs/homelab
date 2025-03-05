@@ -1,0 +1,2 @@
+install_directory: '~/docker/mealie'
+base_address: 'http://localhost:9000'

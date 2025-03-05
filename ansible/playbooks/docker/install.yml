@@ -8,11 +8,11 @@
   vars:
     ansible_become_pass: "{{ docker_sudo_pass }}"
   tags:
-    - ubuntu-dns-install
-    - ubuntu-dns
+    - ubuntu-docker-install
+    - ubuntu-docker
     - ubuntu
-    - dns-install
-    - dns
+    - docker-install
+    - docker
   tasks:
   - name: Install docker
     ansible.builtin.import_role:
