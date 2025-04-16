@@ -1,3 +1,5 @@
 vars/
+.ansible/
 .vscode/
 inventory.yml
+ansible.old/

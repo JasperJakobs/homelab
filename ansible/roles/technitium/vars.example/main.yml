@@ -1,5 +1,0 @@
-install_directory: '~/docker/technitium'
-base_address: 'http://localhost:5380'
-dns_configurations:
-  token: 'your_token'
-  admin_password: 'your_password'

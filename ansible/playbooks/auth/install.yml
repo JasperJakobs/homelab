@@ -1,0 +1,21 @@
+---
+- name: Install Authentication Server
+  hosts: auth
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../vars/sudo.yml
+  vars:
+    ansible_become_pass: "{{ auth_sudo_pass }}"
+  tasks:
+    - name: Harden server
+      ansible.builtin.import_role:
+        name: "../../roles/ubuntu"
+        tasks_from: harden
+
+  handlers:
+    - name: Restart SSH
+      ansible.builtin.systemd:
+        name: ssh
+        state: restarted
+      become: true

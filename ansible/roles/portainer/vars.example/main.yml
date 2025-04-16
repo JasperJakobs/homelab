@@ -1,2 +1,0 @@
-install_directory: '~/docker/portainer'
-base_address: 'http://localhost:9443'

@@ -1,6 +1,0 @@
----
-remote_docker_directory: /etc/docker
-docker_keyring_location: /etc/apt/keyrings
-cpuArchitectureFormat: 
-  x86_64: amd64
-  aarch64: arm64

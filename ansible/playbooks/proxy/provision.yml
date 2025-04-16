@@ -1,0 +1,14 @@
+---
+- name: Sync Proxy Hosts
+  hosts: proxy
+  gather_facts: true
+  become: true
+  vars_files:
+    - ../../vars/sudo.yml
+  vars:
+    ansible_become_pass: "{{ proxy_sudo_pass }}"
+  tasks:
+    - name: Run proxy Sync
+      ansible.builtin.import_role:
+        name: "../../roles/nginx_proxy_manager"
+        tasks_from: provision

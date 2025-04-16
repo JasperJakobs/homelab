@@ -1,0 +1,76 @@
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Set tailscale version variables
+  set_fact:
+    tailscale_os: >-
+      {{ 'ubuntu' if ansible_distribution == 'Ubuntu' else
+         'debian' if ansible_distribution == 'Debian' else
+         'raspbian' if ansible_distribution == 'Raspbian' else
+         'unsupported' }}
+    tailscale_codename: "{{ ansible_lsb.codename }}"
+    apt_key_type: >-
+      {{ 'keyring' if (
+           (ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')) or
+           (ansible_distribution == 'Debian' and ansible_distribution_version is version('11', '>='))
+         ) else 'legacy' }}
+
+- name: Fail if OS not supported
+  fail:
+    msg: "Tailscale Ansible role currently only supports Ubuntu, Debian en Raspbian"
+  when: tailscale_os == 'unsupported'
+
+- name: Ensure /usr/share/keyrings exists
+  file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Add Tailscale keyring (keyring method)
+  when: apt_key_type == 'keyring'
+  get_url:
+    url: "https://pkgs.tailscale.com/stable/{{ tailscale_os }}/{{ tailscale_codename }}.noarmor.gpg"
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    mode: '0644'
+
+- name: Add Tailscale apt repository (keyring method)
+  when: apt_key_type == 'keyring'
+  copy:
+    dest: /etc/apt/sources.list.d/tailscale.list
+    content: |
+      deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/{{ tailscale_os }} {{ tailscale_codename }} main
+    mode: '0644'
+
+- name: Add Tailscale GPG key (legacy method)
+  when: apt_key_type == 'legacy'
+  apt_key:
+    url: "https://pkgs.tailscale.com/stable/{{ tailscale_os }}/{{ tailscale_codename }}.asc"
+    state: present
+
+- name: Add Tailscale apt repo (legacy method)
+  when: apt_key_type == 'legacy'
+  apt_repository:
+    repo: "deb https://pkgs.tailscale.com/stable/{{ tailscale_os }} {{ tailscale_codename }} main"
+    state: present
+    filename: tailscale
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Tailscale
+  apt:
+    name:
+      - tailscale
+      - tailscale-archive-keyring
+    state: present
+
+- name: Enable and start tailscaled
+  systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+- name: Run tailscale up with auth key (optional)
+  command: "tailscale up --authkey={{ tailscale_authkey }}"
+  when: tailscale_authkey is defined and tailscale_authkey != ""

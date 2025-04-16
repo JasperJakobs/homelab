@@ -1,38 +1,48 @@
 ---
-- hosts: docker
-  become: yes
+- name: Install Proxy
+  hosts: proxy
   gather_facts: true
+  become: true
   vars_files:
     - ../../vars/sudo.yml
-    - ../../roles/nginx_proxy_manager/vars/main.yml
   vars:
-    ansible_become_pass: "{{ docker_sudo_pass }}"
-  tags:
-    - ubuntu-nginx_proxy_manager-install
-    - ubuntu-nginx_proxy_manager
-    - ubuntu
-    - nginx_proxy_manager-install
-    - nginx_proxy_manager
+    ansible_become_pass: "{{ proxy_sudo_pass }}"
   tasks:
+    - name: Harden server
+      ansible.builtin.import_role:
+        name: "../../roles/ubuntu"
+        tasks_from: harden
 
-  - name: Check if docker is installed
-    ansible.builtin.command: docker --version
-    register: docker_valid
-    ignore_errors: yes
+    - name: Mount appdata van NAS
+      ansible.builtin.import_role:
+        name: "../../roles/fileshare"
+        tasks_from: install
 
-  - name: Install docker
-    ansible.builtin.import_role:
-      name: "../../roles/docker"
-    when: docker_valid.failed
-    tags:
-      - ubuntu-vm-docker-install
-      - ubuntu-docker-install
+    - name: Check if docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_valid
+      ignore_errors: true
+    
+    - name: Install docker
+      ansible.builtin.import_role:
+        name: "../../roles/docker"
+        tasks_from: install
+      when: docker_valid.failed
+
+    - name: Check if tailscale is installed
+      ansible.builtin.command: tailscale version
+      register: tailscale_valid
+      ignore_errors: true
       
-  - name: Install nginx proxy manager
-    ansible.builtin.import_role:
-      name: "../../roles/nginx_proxy_manager"
-    tags:
-      - ubuntu-vm-nginx_proxy_manager-install
-      - ubuntu-nginx_proxy_manager-install
-      - docker-nginx_proxy_manager-install
-      - nginx_proxy_manager-install
+    - name: Install tailscale
+      ansible.builtin.import_role:
+        name: "../../roles/tailscale"
+        tasks_from: install
+      when: tailscale_valid.failed
+      vars:
+        tailscale_authkey: "{{ tailscale_authkey }}"
+
+    - name: Install proxy
+      ansible.builtin.import_role:
+        name: "../../roles/nginx_proxy_manager"
+        tasks_from: install

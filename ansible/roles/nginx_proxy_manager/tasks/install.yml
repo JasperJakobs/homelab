@@ -1,0 +1,48 @@
+---
+- name: Check if directories exist
+  stat:
+    path: "{{ item }}"
+  register: appdata_dirs
+  loop:
+    - "{{ install_directory }}"
+    - "/mnt/appdata/{{ ansible_hostname }}/{{ install_directory}}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create directory structure (only if not exists)
+  file:
+    path: "{{ item.item }}"
+    state: directory
+    mode: '0775'
+  when: not item.stat.exists
+  loop: "{{ appdata_dirs.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: create docker-compose file to run container
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ install_directory }}/docker-compose.yml"
+    mode: 0655
+  vars:
+    configurations: "{{ dns_configurations }}"
+
+- name: start container using docker-compose
+  command: docker compose up -d
+  args:
+    chdir: "{{ install_directory }}"  
+
+- name: Set iptables rules for docker0 bridge
+  become: true
+  command: iptables -A INPUT -i docker0 -p tcp -m multiport --dports 80,81,443 -j ACCEPT
+
+- name: Save all current rules to rules.v4
+  become: true
+  shell: iptables-save > /etc/iptables/rules.v4
+
+- name: Sync nginx-proxy-manager directory to fileshare using rsync
+  command: rsync -avz --delete --exclude 'docker-compose.yml' {{ install_directory }}/data /mnt/appdata/{{ ansible_hostname }}/nginx_proxy_manager/data
+  args:
+    chdir: "{{ install_directory }}"
+  when: ansible_hostname != "localhost"
+  register: rsync_result

@@ -1,0 +1,83 @@
+---
+- name: Upgrade all packages to the latest version
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Ensure login as root is disabled
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: Restart SSH
+
+- name: Ensure password authentication is disabled
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Restart SSH
+
+- name: Ensure empty passwords are disabled
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitEmptyPasswords'
+    line: 'PermitEmptyPasswords no'
+    state: present
+  notify: Restart SSH
+
+
+- name: Ensure SSH protocol version 2 is used
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^Protocol'
+    line: 'Protocol 2'
+    state: present
+  notify: Restart SSH
+
+- name: Create iptables rules file safely
+  become: true
+  copy:
+    dest: /tmp/iptables.rules
+    content: |
+      *filter
+      :INPUT DROP [0:0]
+      :FORWARD DROP [0:0]
+      :OUTPUT ACCEPT [0:0]
+
+      -A INPUT -i lo -j ACCEPT
+      -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+      -A INPUT -p tcp --dport 22 -j ACCEPT
+
+      COMMIT
+
+- name: Apply iptables rules safely
+  become: true
+  shell: iptables-restore < /tmp/iptables.rules
+
+- name: Ensure /etc/iptables exists
+  become: true
+  file:
+    path: /etc/iptables
+    state: directory
+    mode: '0755'
+  
+
+- name: Save all current rules to rules.v4
+  become: true
+  shell: iptables-save > /etc/iptables/rules.v4
+
+- name: Ensure iptables-persistent is installed
+  become: true
+  apt:
+    name: iptables-persistent
+    state: present
+

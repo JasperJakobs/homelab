@@ -1,0 +1,89 @@
+---
+- name: Wait for NPM to become available
+  uri:
+    url: "http://{{ ansible_default_ipv4.address }}:81"
+    status_code: 200
+  register: npm_check
+  retries: 10
+  delay: 5
+  until: npm_check.status == 200
+
+- name: Get NPM token
+  uri:
+    url: "http://{{ ansible_default_ipv4.address }}:81/api/tokens"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      identity: "{{ npm_admin_email }}"
+      secret: "{{ npm_admin_password }}"
+  register: npm_token
+  failed_when: npm_token.status != 200
+
+- name: Get existing proxy hosts
+  uri:
+    url: "http://{{ ansible_default_ipv4.address }}:81/api/nginx/proxy-hosts"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ npm_token.json.token }}"
+  register: existing_hosts
+
+- name: Get existing certificates
+  uri:
+    url: "http://{{ ansible_default_ipv4.address }}:81/api/nginx/certificates"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ npm_token.json.token }}"
+  register: certificates
+
+- name: Find certificate
+  set_fact:
+    wildcard_cert_id: >-
+      {{ certificates.json
+         | selectattr('domain_names', 'defined')
+         | selectattr('domain_names', 'contains', '*.lcl.jkbs.nl')
+         | map(attribute='id')
+         | list
+         | first }}
+
+- name: Remove existing proxy hosts
+  uri:
+    url: "http://{{ ansible_default_ipv4.address }}:81/api/nginx/proxy-hosts/{{ item.id }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ npm_token.json.token }}"
+  loop: "{{ existing_hosts.json }}"
+  loop_control:
+    label: "{{ item.domain_names }}"
+
+
+- name: Add new proxy hosts
+  uri:
+    url: "http://localhost:81/api/nginx/proxy-hosts"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ npm_token.json.token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      domain_names: "{{ item.domain_names }}"
+      forward_scheme: "{{ item.forward_scheme }}"
+      forward_host: "{{ item.forward_host }}"
+      forward_port: "{{ item.forward_port }}"
+      access_list_id: null
+      certificate_id: "{{ wildcard_cert_id }}"
+      ssl_forced: true
+      caching_enabled: false
+      block_exploits: true
+      allow_websocket_upgrade: true
+      http2_support: false
+      hsts_enabled: true
+      hsts_subdomains: true
+      locations: []
+      advanced_config: "{{ item.advanced_config | default() }}"
+      meta: {}
+  loop: "{{ proxy_hosts }}"
+  failed_when: proxy_host_response.status not in [200, 201]
+  register: proxy_host_response
+

@@ -1,3 +1,0 @@
-install_directory: '~/docker/node_proxy_manager'
-base_address: 'http://localhost:81'
-api_base_address: "{{ base_address }}/api"
